@@ -1,71 +1,27 @@
 program importSubject
 	args subjNum
 	set more off
+	importRawDataFiles `subjNum'
+	mergeImageAndBaseData `subjNum'
+//	clear
+	set more on
+end
+
+program importRawDataFiles
+	args subjNum
 	mata: printf("Importing subject: %s\n",st_local("subNum"))
 	importDataCondition "left90" `subjNum'
 	importDataCondition "leftStraight" `subjNum'
 	importDataCondition "right90" `subjNum'
 	importDataCondition "rightStraight" `subjNum'
 	importDataActual `subjNum'
-//	clear
+	clear
 end
 
 program importDataCondition
 	args condition subjNum
 	importBaseCSVFile `condition' `subjNum'
 	importImageCSVFile `condition' `subjNum'
-end
-
-program importDataType
-	args dataType subjInitials subjN
-	importCSVFile `dataType' `subjInitials' "instructionDorsal"
-	importCSVFile `dataType' `subjInitials' "pointerDorsal"
-	importCSVFile `dataType' `subjInitials' "visionDorsal"
-	importCSVFile `dataType' `subjInitials' "blindDorsal"
-	importCSVFile `dataType' `subjInitials' "visionPalmar"
-	importCSVFile `dataType' `subjInitials' "blindPalmar"
-	clear
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_instructionDorsal_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_pointerDorsal_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_visionDorsal_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_blindDorsal_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_visionPalmar_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	mata: st_local("dataFileName",sprintf("%s/Land_%s_blindPalmar_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	capture confirm file "`dataFileName'.dta"
-	if _rc==0 {
-		append using `dataFileName'
-		rm "`dataFileName'.dta"
-	}
-	generate subjNum = `subjN'
-	order subjNum, first
-	mata: st_local("mainFileName",sprintf("%s/Landmark_%s_%s",st_local("subjInitials"),st_local("subjInitials"),st_local("dataType")))
-	save `mainFileName',replace
-	clear
 end
 
 program importBaseCSVFile
@@ -94,6 +50,7 @@ program importImageCSVFile
 		clear
 		import delimited trial measurement filename rawX rawY calX calY using `filePath'
 		mata: st_local("outFile",sprintf("../Data/GM_S%s_%s_imageData",st_local("subjNum"),st_local("condition")))
+		drop trial measurement
 		save `outFile', replace
 		clear	
 	}
@@ -117,5 +74,38 @@ program importDataActual
 	else {
 		mata: printf("\t - does not exist.\n")
 	}
+end
+
+program mergeImageAndBaseData
+	args subjNum
+	mergeRawImageAndBaseData "left90" `subjNum'
+//	mergeRawImageAndBaseData "leftStraight" `subjNum'
+//	mergeRawImageAndBaseData "right90" `subjNum'
+//	mergeRawImageAndBaseData "rightStraight" `subjNum'
+//	clear
+end
+
+program mergeRawImageAndBaseData
+	args condition subjNum
+	mata: st_local("baseDataFile",sprintf("../Data/GM_S%s_%s_data",st_local("subjNum"),st_local("condition")))
+	mata: st_local("imageDataFile",sprintf("../Data/GM_S%s_%s_imageData",st_local("subjNum"),st_local("condition")))
+	mata: st_local("newDataFile",sprintf("../Data/GM_S%s_data.dta",st_local("subjNum")))
+	use `baseDataFile' if condition == 0
+	rename xLocation filename
+	save "../Data/tempBase.dta", replace
+	clear
+	use `imageDataFile'
+	merge 1:1 filename using "../Data/tempBase.dta"
+	drop _merge
+	save `newDataFile',replace
+	rm "../Data/tempBase.dta"
+	use `baseDataFile' if condition == 1
+	append using `newDataFile'
+	sort trial
+	save `newDataFile', replace
+	rm "`baseDataFile'.dta"
+	rm "`imageDataFile'.dta"
+	
+//	clear
 end
 
