@@ -79,17 +79,16 @@ end
 program mergeImageAndBaseData
 	args subjNum
 	mergeRawImageAndBaseData "left90" `subjNum'
-//	mergeRawImageAndBaseData "leftStraight" `subjNum'
-//	mergeRawImageAndBaseData "right90" `subjNum'
-//	mergeRawImageAndBaseData "rightStraight" `subjNum'
-//	clear
+	mergeRawImageAndBaseData "leftStraight" `subjNum'
+	mergeRawImageAndBaseData "right90" `subjNum'
+	mergeRawImageAndBaseData "rightStraight" `subjNum'
+	clear
 end
 
 program mergeRawImageAndBaseData
 	args condition subjNum
 	mata: st_local("baseDataFile",sprintf("../Data/GM_S%s_%s_data",st_local("subjNum"),st_local("condition")))
 	mata: st_local("imageDataFile",sprintf("../Data/GM_S%s_%s_imageData",st_local("subjNum"),st_local("condition")))
-	mata: st_local("newDataFile",sprintf("../Data/GM_S%s_data.dta",st_local("subjNum")))
 	use `baseDataFile' if condition == 0
 	rename xLocation filename
 	save "../Data/tempBase.dta", replace
@@ -97,15 +96,35 @@ program mergeRawImageAndBaseData
 	use `imageDataFile'
 	merge 1:1 filename using "../Data/tempBase.dta"
 	drop _merge
-	save `newDataFile',replace
-	rm "../Data/tempBase.dta"
+	save "../Data/tempBase.dta",replace
 	use `baseDataFile' if condition == 1
-	append using `newDataFile'
+	destring xLocation, replace
+	append using "../Data/tempBase.dta"
 	sort trial
-	save `newDataFile', replace
-	rm "`baseDataFile'.dta"
 	rm "`imageDataFile'.dta"
-	
-//	clear
+	mata: calibrateGridReferences()
+	drop xLocation yLocation
+	order filename, last
+	save `baseDataFile', replace
+	clear
+end
+
+version 14
+mata:
+void calibrateGridReferences() {
+	gridRefs = st_data(.,"condition xLocation yLocation")
+	st_view(calCoords,.,"rawX rawY calX calY")
+	count = rows(gridRefs)
+	xCalibration = 10.2	//mm
+	yCalibration = 10.2 //mm
+	for(i=1; i<=count ;i++){
+		if(gridRefs[i,1] == 1){
+			calCoords[i,1] = gridRefs[i,2]
+			calCoords[i,2] = gridRefs[i,3]
+			calCoords[i,3] = gridRefs[i,2] * xCalibration
+			calCoords[i,4] = gridRefs[i,3] * yCalibration
+		}
+	}
+}
 end
 
