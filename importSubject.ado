@@ -3,7 +3,8 @@ program importSubject
 	set more off
 	importRawDataFiles `subjNum'
 	mergeImageAndBaseData `subjNum'
-//	clear
+	collectPerceivedData `subjNum'
+	clear
 	set more on
 end
 
@@ -67,7 +68,19 @@ program importDataActual
 	if _rc==0 {
 		clear
 		import delimited trial measurement filename rawX rawY calX calY using `filePath'
-		mata: st_local("outFile",sprintf("../Data/GM_S%s_actualPosition_imageData",st_local("subjNum")))
+		g posture=0 if strpos(filename, "left90")
+		replace posture=1 if strpos(filename, "leftStraight")
+		replace posture=2 if strpos(filename, "right90")
+		replace posture=3 if strpos(filename, "rightStraight")
+		label define Postures 0 "left90" 1 "leftStraight" 2 "right90" 3 "rightStraight"
+		label values posture Postures
+		label define Landmarks 0 "thumbTip" 1 "thumbMCP" 2 "indexTip" 3 "indexMCP" 4 "middleTip" 5 "middleMCP" 6 "ringTip" 7 "ringMCP" 8 "littleTip" 9 "littleMCP" 10 "ulna"
+		label values measurement Landmarks
+		rename measurement landmark
+		g subjNum=`subjNum'
+		order trial subjNum posture landmark, first
+		drop filename
+		mata: st_local("outFile",sprintf("../Data/GM_S%s_actualPosition",st_local("subjNum")))
 		save `outFile', replace
 		clear	
 	}
@@ -78,15 +91,15 @@ end
 
 program mergeImageAndBaseData
 	args subjNum
-	mergeRawImageAndBaseData "left90" `subjNum'
-	mergeRawImageAndBaseData "leftStraight" `subjNum'
-	mergeRawImageAndBaseData "right90" `subjNum'
-	mergeRawImageAndBaseData "rightStraight" `subjNum'
+	mergeRawImageAndBaseData "left90" 0 `subjNum'
+	mergeRawImageAndBaseData "leftStraight" 1 `subjNum'
+	mergeRawImageAndBaseData "right90" 2 `subjNum'
+	mergeRawImageAndBaseData "rightStraight" 3 `subjNum'
 	clear
 end
 
 program mergeRawImageAndBaseData
-	args condition subjNum
+	args condition postureCode subjNum
 	mata: st_local("baseDataFile",sprintf("../Data/GM_S%s_%s_data",st_local("subjNum"),st_local("condition")))
 	mata: st_local("imageDataFile",sprintf("../Data/GM_S%s_%s_imageData",st_local("subjNum"),st_local("condition")))
 	use `baseDataFile' if condition == 0
@@ -104,8 +117,10 @@ program mergeRawImageAndBaseData
 	rm "`imageDataFile'.dta"
 	mata: calibrateGridReferences()
 	drop xLocation yLocation
-	order filename, last
+	drop filename
+	g posture=`postureCode'
 	save `baseDataFile', replace
+	rm "../Data/tempBase.dta"
 	clear
 end
 
@@ -126,5 +141,24 @@ void calibrateGridReferences() {
 		}
 	}
 }
+end
+
+program collectPerceivedData
+	args subjNum
+	use "../Data/GM_S`subjNum'_left90_data.dta"
+	append using "../Data/GM_S`subjNum'_leftStraight_data.dta"
+	append using "../Data/GM_S`subjNum'_right90_data.dta"
+	append using "../Data/GM_S`subjNum'_rightStraight_data.dta"
+	label define Postures 0 "left90" 1 "leftStraight" 2 "right90" 3 "rightStraight"
+	label values posture Postures
+	label define Landmarks 0 "thumbTip" 1 "thumbMCP" 2 "indexTip" 3 "indexMCP" 4 "middleTip" 5 "middleMCP" 6 "ringTip" 7 "ringMCP" 8 "littleTip" 9 "littleMCP" 10 "ulna"
+	label values landmark Landmarks
+	g subjNum=`subjNum'
+	order trial subjNum condition posture landmark, first
+	save "../Data/GM_S`subjNum'_perceivedPosition.dta",replace
+	rm "../Data/GM_S`subjNum'_left90_data.dta"
+	rm "../Data/GM_S`subjNum'_leftStraight_data.dta"
+	rm "../Data/GM_S`subjNum'_right90_data.dta"
+	rm "../Data/GM_S`subjNum'_rightStraight_data.dta"
 end
 
