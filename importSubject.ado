@@ -149,6 +149,8 @@ program collectPerceivedData
 	append using "../Data/GM_S`subjNum'_leftStraight_data.dta"
 	append using "../Data/GM_S`subjNum'_right90_data.dta"
 	append using "../Data/GM_S`subjNum'_rightStraight_data.dta"
+	label define Conditions 0 "pointing" 1 "gridReference" 2 "actual"
+	label values condition Conditions
 	label define Postures 0 "left90" 1 "leftStraight" 2 "right90" 3 "rightStraight"
 	label values posture Postures
 	label define Landmarks 0 "thumbTip" 1 "thumbMCP" 2 "indexTip" 3 "indexMCP" 4 "middleTip" 5 "middleMCP" 6 "ringTip" 7 "ringMCP" 8 "littleTip" 9 "littleMCP" 10 "ulna"
@@ -160,5 +162,11 @@ program collectPerceivedData
 	rm "../Data/GM_S`subjNum'_leftStraight_data.dta"
 	rm "../Data/GM_S`subjNum'_right90_data.dta"
 	rm "../Data/GM_S`subjNum'_rightStraight_data.dta"
+	
+	collapse (mean) rawX=rawX (sd) rawXSD=rawX (mean) rawY=rawY (sd) rawYSD=rawY (mean) calX=calX (sd) calXSD=calX (mean) calY=calY (sd) calYSD=calY (count) n=subjNum, by(condition posture landmark)
+	g subjNum=`subjNum'
+	order subjNum, first
+	save "../Data/GM_S`subjNum'_perceivedPosition_means.dta", replace
+	clear
 end
 
