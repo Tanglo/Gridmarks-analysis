@@ -10,23 +10,22 @@ end
 
 program importRawDataFiles
 	args subjNum
-	mata: printf("Importing subject: %s\n",st_local("subNum"))
-	importDataCondition "left90" `subjNum'
-	importDataCondition "leftStraight" `subjNum'
-	importDataCondition "right90" `subjNum'
-	importDataCondition "rightStraight" `subjNum'
+	importDataCondition "left90" 0 `subjNum'
+	importDataCondition "leftStraight" 1 `subjNum'
+	importDataCondition "right90" 2 `subjNum'
+	importDataCondition "rightStraight" 3 `subjNum'
 	importDataActual `subjNum'
 	clear
 end
 
 program importDataCondition
-	args condition subjNum
-	importBaseCSVFile `condition' `subjNum'
+	args condition postureCode subjNum
+	importBaseCSVFile `condition' `postureCode' `subjNum'
 	importImageCSVFile `condition' `subjNum'
 end
 
 program importBaseCSVFile
-	args condition subjNum
+	args condition postureCode subjNum
 	mata: st_local("filePath",sprintf("../Data/Raw/S%s/GM_S%s_%s_data.csv",st_local("subjNum"),st_local("subjNum"),st_local("condition")))
 	mata: printf("File: %s\n",st_local("filePath"))
 	capture confirm file `filePath'
@@ -34,6 +33,7 @@ program importBaseCSVFile
 		clear
 		import delimited trial condition landmark xLocation yLocation  using `filePath'
 		mata: st_local("outFile",sprintf("../Data/GM_S%s_%s_data",st_local("subjNum"),st_local("condition")))
+		g posture=`postureCode'
 		save `outFile', replace
 		clear	
 	}
@@ -91,15 +91,15 @@ end
 
 program mergeImageAndBaseData
 	args subjNum
-	mergeRawImageAndBaseData "left90" 0 `subjNum'
-	mergeRawImageAndBaseData "leftStraight" 1 `subjNum'
-	mergeRawImageAndBaseData "right90" 2 `subjNum'
-	mergeRawImageAndBaseData "rightStraight" 3 `subjNum'
+	mergeRawImageAndBaseData "left90" `subjNum'
+	mergeRawImageAndBaseData "leftStraight" `subjNum'
+	mergeRawImageAndBaseData "right90" `subjNum'
+	mergeRawImageAndBaseData "rightStraight" `subjNum'
 	clear
 end
 
 program mergeRawImageAndBaseData
-	args condition postureCode subjNum
+	args condition subjNum
 	mata: st_local("baseDataFile",sprintf("../Data/GM_S%s_%s_data",st_local("subjNum"),st_local("condition")))
 	mata: st_local("imageDataFile",sprintf("../Data/GM_S%s_%s_imageData",st_local("subjNum"),st_local("condition")))
 	use `baseDataFile' if condition == 0
@@ -118,7 +118,6 @@ program mergeRawImageAndBaseData
 	mata: calibrateGridReferences()
 	drop xLocation yLocation
 	drop filename
-	g posture=`postureCode'
 	save `baseDataFile', replace
 	rm "../Data/tempBase.dta"
 	clear
