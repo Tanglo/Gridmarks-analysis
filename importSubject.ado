@@ -115,6 +115,7 @@ program mergeRawImageAndBaseData
 	append using "../Data/tempBase.dta"
 	sort trial
 	rm "`imageDataFile'.dta"
+	replace xLocation=xLocation	+4 //to line up with zero of the image calibration
 	mata: calibrateGridReferences()
 	drop xLocation yLocation
 	drop filename
