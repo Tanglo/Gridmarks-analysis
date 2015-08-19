@@ -136,8 +136,8 @@ void calibrateGridReferences() {
 		if(gridRefs[i,1] == 1){
 			calCoords[i,1] = gridRefs[i,2]
 			calCoords[i,2] = gridRefs[i,3]
-			calCoords[i,3] = gridRefs[i,2] * xCalibration
-			calCoords[i,4] = gridRefs[i,3] * yCalibration
+			calCoords[i,3] = (gridRefs[i,2] -3.5) * xCalibration
+			calCoords[i,4] = (gridRefs[i,3] + 0.3) * yCalibration
 		}
 	}
 }

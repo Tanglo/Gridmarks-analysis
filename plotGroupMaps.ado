@@ -1,5 +1,6 @@
 program plotGroupMaps
 	set more off
+	setActualUlnaToZero
 	use "../Data/GM_groupData_shifted.dta"
 	collapse (mean) calX=calX (sd) calXSD=calX (mean) calY=calY (sd) calYSD=calY (count) n=subjNum, by(condition posture landmark) 
 	g highCalXCI = calX + invttail(n-1,0.025)*(calXSD / sqrt(n))
