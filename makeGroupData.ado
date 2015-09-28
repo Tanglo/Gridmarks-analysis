@@ -23,14 +23,26 @@ program groupSubjects
 	local second = `first' +1
 	use "../Data/GM_S`first'_perceivedPosition_means.dta"
 	forvalues i = `second'/`last' {
-		append using "../Data/GM_S`i'_perceivedPosition_means.dta"
+		mata: st_local("currentFile",sprintf("../Data/GM_S%s_perceivedPosition_means.dta",st_local("i")))
+		if fileexists("`currentFile'"){
+			append using "`currentFile'"
+		}
+		else {
+			mata: printf(`"File: "%s" does not exist\n"', st_local("currentFile"))
+		}
 	}
 	save "../Data/GM_group_perceivedPosition_means.dta",replace
 	clear
 	
 	use "../Data/GM_S`first'_actualPosition.dta"
 	forvalues i = `second'/`last' {
-		append using "../Data/GM_S`i'_actualPosition.dta"
+		mata: st_local("currentFile",sprintf("../Data/GM_S%s_actualPosition.dta",st_local("i")))
+		if fileexists("`currentFile'"){
+			append using "`currentFile'"
+		}
+		else {
+			mata: printf(`"File: "%s" does not exist\n"', st_local("currentFile"))
+		}
 	}
 	save "../Data/GM_group_actualPosition.dta",replace
 	clear

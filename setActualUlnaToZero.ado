@@ -20,7 +20,8 @@ void subtractActualUlna() {
 	rawData = st_data(.,"subjNum calX calY")
 	st_view(shiftedData,.,"shiftedCalX shiftedCalY")
 	count = rows(rawData)
-	numSubj = rawData[count-1,1]
+//	numSubj = rawData[count-1,1]
+	numSubj = count/132
 	for(i=1; i<=numSubj ;i++){
 		for(l=0; l<3; l++){
 			for(j=0; j<4; j++){
